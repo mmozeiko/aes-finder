@@ -1,7 +1,7 @@
 *.suo
 *.sdf
-*.user
 *.opensdf
-Debug
-Release
-x64
+aes-finder/*.user
+aes-finder/Debug
+aes-finder/Release
+aes-finder/x64

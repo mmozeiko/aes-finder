@@ -113,7 +113,7 @@ static uint32_t setup_mix2(uint32_t temp)
          ^ rotr32(TE[Td[byte(temp, 0)]], 24);
 }
 
-template <bool little>
+template <bool reversed>
 uint32_t load(uint32_t x);
 
 template <>
@@ -132,7 +132,7 @@ uint32_t load<false>(uint32_t x)
 #endif
 }
 
-template <bool little>
+template <bool reversed>
 void store(uint32_t x, uint8_t* ptr);
 
 template <>
@@ -151,30 +151,30 @@ void store<false>(uint32_t x, uint8_t* ptr)
 #endif
 }
 
-template <bool little>
+template <bool reversed>
 static bool aes128_detect_enc(const uint32_t* ctx, uint8_t* key)
 {
     const uint32_t* ptr = ctx;
 
     uint32_t tmp[8];
-    tmp[0] = load<little>(ctx[0]);
-    tmp[1] = load<little>(ctx[1]);
-    tmp[2] = load<little>(ctx[2]);
-    tmp[3] = load<little>(ctx[3]);
+    tmp[0] = load<reversed>(ctx[0]);
+    tmp[1] = load<reversed>(ctx[1]);
+    tmp[2] = load<reversed>(ctx[2]);
+    tmp[3] = load<reversed>(ctx[3]);
 
     for (int i = 0; ctx += 4, i < 10; i++)
     {
         tmp[4] = tmp[0] ^ setup_mix(tmp[3]) ^ rcon[i];
-        if (tmp[4] != load<little>(ctx[0])) return false;
+        if (tmp[4] != load<reversed>(ctx[0])) return false;
 
         tmp[5] = tmp[1] ^ tmp[4];
-        if (tmp[5] != load<little>(ctx[1])) return false;
+        if (tmp[5] != load<reversed>(ctx[1])) return false;
 
         tmp[6] = tmp[2] ^ tmp[5];
-        if (tmp[6] != load<little>(ctx[2])) return false;
+        if (tmp[6] != load<reversed>(ctx[2])) return false;
 
         tmp[7] = tmp[3] ^ tmp[6];
-        if (tmp[7] != load<little>(ctx[3])) return false;
+        if (tmp[7] != load<reversed>(ctx[3])) return false;
 
         tmp[0] = tmp[4];
         tmp[1] = tmp[5];
@@ -182,15 +182,15 @@ static bool aes128_detect_enc(const uint32_t* ctx, uint8_t* key)
         tmp[3] = tmp[7];
     }
 
-    store<false>(load<little>(ptr[0]), key + 0);
-    store<false>(load<little>(ptr[1]), key + 4);
-    store<false>(load<little>(ptr[2]), key + 8);
-    store<false>(load<little>(ptr[3]), key + 12);
+    store<false>(load<reversed>(ptr[0]), key + 0);
+    store<false>(load<reversed>(ptr[1]), key + 4);
+    store<false>(load<reversed>(ptr[2]), key + 8);
+    store<false>(load<reversed>(ptr[3]), key + 12);
 
     return true;
 }
 
-template <bool little>
+template <bool reversed>
 static bool aes192_detect_enc(const uint32_t* ctx, uint8_t* key)
 {
     const uint32_t* ptr = ctx;
@@ -198,7 +198,7 @@ static bool aes192_detect_enc(const uint32_t* ctx, uint8_t* key)
     uint32_t tmp[12];
     for (int i = 0; i < 6; i++)
     {
-        tmp[i] = load<little>(ctx[i]);
+        tmp[i] = load<reversed>(ctx[i]);
     }
  
     int i = 0;
@@ -207,32 +207,32 @@ static bool aes192_detect_enc(const uint32_t* ctx, uint8_t* key)
         ctx += 6;
 
         tmp[6] = tmp[0] ^ setup_mix(tmp[5]) ^ rcon[i];
-        if (tmp[6] != load<little>(ctx[0])) return false;
+        if (tmp[6] != load<reversed>(ctx[0])) return false;
 
         tmp[7] = tmp[1] ^ tmp[6];
-        if (tmp[7] != load<little>(ctx[1])) return false;
+        if (tmp[7] != load<reversed>(ctx[1])) return false;
 
         tmp[8] = tmp[2] ^ tmp[7];
-        if (tmp[8] != load<little>(ctx[2])) return false;
+        if (tmp[8] != load<reversed>(ctx[2])) return false;
 
         tmp[9] = tmp[3] ^ tmp[8];
-        if (tmp[9] != load<little>(ctx[3])) return false;
+        if (tmp[9] != load<reversed>(ctx[3])) return false;
 
         if (++i == 8)
         {
             for (int k = 0; k < 6; k++)
             {
-                store<false>(load<little>(ptr[k]), key + 4 * k);
+                store<false>(load<reversed>(ptr[k]), key + 4 * k);
             }
 
             return true;
         }
 
         tmp[10] = tmp[4] ^ tmp[9];
-        if (tmp[10] != load<little>(ctx[4])) return false;
+        if (tmp[10] != load<reversed>(ctx[4])) return false;
 
         tmp[11] = tmp[5] ^ tmp[10];
-        if (tmp[11] != load<little>(ctx[5])) return false;
+        if (tmp[11] != load<reversed>(ctx[5])) return false;
         
         for (int k = 0; k < 6; k++)
         {
@@ -241,7 +241,7 @@ static bool aes192_detect_enc(const uint32_t* ctx, uint8_t* key)
     }
 }
 
-template <bool little>
+template <bool reversed>
 static bool aes256_detect_enc(const uint32_t* ctx, uint8_t* key)
 {
     const uint32_t* ptr = ctx;
@@ -249,7 +249,7 @@ static bool aes256_detect_enc(const uint32_t* ctx, uint8_t* key)
     uint32_t tmp[16];
     for (int i = 0; i < 8; i++)
     {
-        tmp[i] = load<little>(ctx[i]);
+        tmp[i] = load<reversed>(ctx[i]);
     }
 
     int i = 0;
@@ -258,38 +258,38 @@ static bool aes256_detect_enc(const uint32_t* ctx, uint8_t* key)
         ctx += 8;
 
         tmp[8] = tmp[0] ^ setup_mix(tmp[7]) ^ rcon[i];
-        if (tmp[8] != load<little>(ctx[0])) return false;
+        if (tmp[8] != load<reversed>(ctx[0])) return false;
 
         tmp[9] = tmp[1] ^ tmp[8];
-        if (tmp[9] != load<little>(ctx[1])) return false;
+        if (tmp[9] != load<reversed>(ctx[1])) return false;
 
         tmp[10] = tmp[2] ^ tmp[9];
-        if (tmp[10] != load<little>(ctx[2])) return false;
+        if (tmp[10] != load<reversed>(ctx[2])) return false;
 
         tmp[11] = tmp[3] ^ tmp[10];
-        if (tmp[11] != load<little>(ctx[3])) return false;
+        if (tmp[11] != load<reversed>(ctx[3])) return false;
 
         if (++i == 7)
         {
             for (int k = 0; k < 8; k++)
             {
-                store<false>(load<little>(ptr[k]), key + 4 * k);
+                store<false>(load<reversed>(ptr[k]), key + 4 * k);
             }
 
             return true;
         }
 
         tmp[12] = tmp[4] ^ setup_mix(rotr32(tmp[11], 8));
-        if (tmp[12] != load<little>(ctx[4])) return false;
+        if (tmp[12] != load<reversed>(ctx[4])) return false;
 
         tmp[13] = tmp[5] ^ tmp[12];
-        if (tmp[13] != load<little>(ctx[5])) return false;
+        if (tmp[13] != load<reversed>(ctx[5])) return false;
 
         tmp[14] = tmp[6] ^ tmp[13];
-        if (tmp[14] != load<little>(ctx[6])) return false;
+        if (tmp[14] != load<reversed>(ctx[6])) return false;
 
         tmp[15] = tmp[7] ^ tmp[14];
-        if (tmp[15] != load<little>(ctx[7])) return false;
+        if (tmp[15] != load<reversed>(ctx[7])) return false;
 
         for (int k = 0; k < 8; k++)
         {
@@ -316,7 +316,7 @@ static int aes_detect_enc(const uint32_t* ctx, uint8_t* key)
     return 0;
 }
 
-template <bool little>
+template <bool reversed>
 static int aes_detect_dec(const uint32_t* ctx, uint8_t* key)
 {
     uint32_t enc[60];
@@ -326,17 +326,17 @@ static int aes_detect_dec(const uint32_t* ctx, uint8_t* key)
     enc[3] = ctx[3];
     for (int i = 4; i < 56; i += 4)
     {
-        store<little>(setup_mix2(load<little>(ctx[i + 0])), (uint8_t*)&enc[i + 0]);
-        store<little>(setup_mix2(load<little>(ctx[i + 1])), (uint8_t*)&enc[i + 1]);
-        store<little>(setup_mix2(load<little>(ctx[i + 2])), (uint8_t*)&enc[i + 2]);
-        store<little>(setup_mix2(load<little>(ctx[i + 3])), (uint8_t*)&enc[i + 3]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[i + 0])), (uint8_t*)&enc[i + 0]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[i + 1])), (uint8_t*)&enc[i + 1]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[i + 2])), (uint8_t*)&enc[i + 2]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[i + 3])), (uint8_t*)&enc[i + 3]);
     }
 
     enc[56] = ctx[56];
     enc[57] = ctx[57];
     enc[58] = ctx[58];
     enc[59] = ctx[59];
-    if (aes256_detect_enc<little>(enc, key))
+    if (aes256_detect_enc<reversed>(enc, key))
     {
         return 32;
     }
@@ -345,7 +345,7 @@ static int aes_detect_dec(const uint32_t* ctx, uint8_t* key)
     enc[49] = ctx[49];
     enc[50] = ctx[50];
     enc[51] = ctx[51];
-    if (aes192_detect_enc<little>(enc, key))
+    if (aes192_detect_enc<reversed>(enc, key))
     {
         return 24;
     }
@@ -354,7 +354,7 @@ static int aes_detect_dec(const uint32_t* ctx, uint8_t* key)
     enc[41] = ctx[41];
     enc[42] = ctx[42];
     enc[43] = ctx[43];
-    if (aes128_detect_enc<little>(enc, key))
+    if (aes128_detect_enc<reversed>(enc, key))
     {
         return 16;
     }
@@ -365,17 +365,17 @@ static int aes_detect_dec(const uint32_t* ctx, uint8_t* key)
     enc[3] = ctx[59];
     for (int i = 4; i < 56; i += 4)
     {
-        store<little>(setup_mix2(load<little>(ctx[56 - i])), (uint8_t*)&enc[i + 0]);
-        store<little>(setup_mix2(load<little>(ctx[57 - i])), (uint8_t*)&enc[i + 1]);
-        store<little>(setup_mix2(load<little>(ctx[58 - i])), (uint8_t*)&enc[i + 2]);
-        store<little>(setup_mix2(load<little>(ctx[59 - i])), (uint8_t*)&enc[i + 3]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[56 - i])), (uint8_t*)&enc[i + 0]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[57 - i])), (uint8_t*)&enc[i + 1]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[58 - i])), (uint8_t*)&enc[i + 2]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[59 - i])), (uint8_t*)&enc[i + 3]);
     }
     enc[56] = ctx[0];
     enc[57] = ctx[1];
     enc[58] = ctx[2];
     enc[59] = ctx[3];
 
-    if (aes256_detect_enc<little>(enc, key))
+    if (aes256_detect_enc<reversed>(enc, key))
     {
         return 32;
     }
@@ -386,17 +386,17 @@ static int aes_detect_dec(const uint32_t* ctx, uint8_t* key)
     enc[3] = ctx[51];
     for (int i = 4; i < 48; i += 4)
     {
-        store<little>(setup_mix2(load<little>(ctx[48 - i])), (uint8_t*)&enc[i + 0]);
-        store<little>(setup_mix2(load<little>(ctx[49 - i])), (uint8_t*)&enc[i + 1]);
-        store<little>(setup_mix2(load<little>(ctx[50 - i])), (uint8_t*)&enc[i + 2]);
-        store<little>(setup_mix2(load<little>(ctx[51 - i])), (uint8_t*)&enc[i + 3]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[48 - i])), (uint8_t*)&enc[i + 0]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[49 - i])), (uint8_t*)&enc[i + 1]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[50 - i])), (uint8_t*)&enc[i + 2]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[51 - i])), (uint8_t*)&enc[i + 3]);
     }
     enc[48] = ctx[0];
     enc[49] = ctx[1];
     enc[50] = ctx[2];
     enc[51] = ctx[3];
 
-    if (aes192_detect_enc<little>(enc, key))
+    if (aes192_detect_enc<reversed>(enc, key))
     {
         return 24;
     }
@@ -407,17 +407,17 @@ static int aes_detect_dec(const uint32_t* ctx, uint8_t* key)
     enc[3] = ctx[43];
     for (int i = 4; i < 40; i += 4)
     {
-        store<little>(setup_mix2(load<little>(ctx[40 - i])), (uint8_t*)&enc[i + 0]);
-        store<little>(setup_mix2(load<little>(ctx[41 - i])), (uint8_t*)&enc[i + 1]);
-        store<little>(setup_mix2(load<little>(ctx[42 - i])), (uint8_t*)&enc[i + 2]);
-        store<little>(setup_mix2(load<little>(ctx[43 - i])), (uint8_t*)&enc[i + 3]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[40 - i])), (uint8_t*)&enc[i + 0]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[41 - i])), (uint8_t*)&enc[i + 1]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[42 - i])), (uint8_t*)&enc[i + 2]);
+        store<reversed>(setup_mix2(load<reversed>(ctx[43 - i])), (uint8_t*)&enc[i + 3]);
     }
     enc[40] = ctx[0];
     enc[41] = ctx[1];
     enc[42] = ctx[2];
     enc[43] = ctx[3];
 
-    if (aes128_detect_enc<little>(enc, key))
+    if (aes128_detect_enc<reversed>(enc, key))
     {
         return 16;
     }
@@ -440,7 +440,9 @@ static int aes_detect_dec(const uint32_t* ctx, uint8_t* key)
     return 0;
 }
 
-static void find_key(DWORD pid)
+#include "aes-finder-test.h"
+
+static void find_keys(DWORD pid)
 {
     printf("Searching PID %u ...\n", pid);
 
@@ -552,28 +554,28 @@ static void AddLocalDebugPrivileges()
             tp.PrivilegeCount = 1;
             tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
-            AdjustTokenPrivileges(hToken, FALSE, &tp, 0, (PTOKEN_PRIVILEGES)NULL, 0);
+            AdjustTokenPrivileges(hToken, FALSE, &tp, 0, NULL, 0);
         }
 
         CloseHandle(hToken);
     }
 }
-
 int main(int argc, char* argv[])
 {
-
     if (argc != 2)
     {
         printf("Usage: aes-finder -pid | process.exe\n");
         return EXIT_FAILURE;
     }
 
+    self_test();
+
     AddLocalDebugPrivileges();
 
     if (argv[1][0] == '-')
     {
         DWORD pid = atoi(argv[1] + 1);
-        find_key(pid);
+        find_keys(pid);
     }
     else
     {
@@ -589,7 +591,7 @@ int main(int argc, char* argv[])
             {
                 if (_stricmp(entry.szExeFile, argv[1]) == 0)
                 {
-                    find_key(entry.th32ProcessID);
+                    find_keys(entry.th32ProcessID);
                 }
             }
             while (Process32Next(snapshot, &entry));

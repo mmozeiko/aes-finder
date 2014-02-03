@@ -111,9 +111,9 @@ Notes
 -----
 
 * does not work on whitebox AES keys
-* 32-bit binary can search in only 32-bit processes, 64-bit binary can search in 32 and 64-bit ones
+* 32-bit binary can search only in 32-bit processes, 64-bit binary can search in both - 32 and 64-bit ones
 * "encryption key" means that this key can be used for encryption or decryption
-* "decryption key" means that most likely this key is used only for decryption
+* "decryption key" means that this key most likely is used only for decryption
 
 License
 -------
