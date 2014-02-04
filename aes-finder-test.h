@@ -1,6 +1,5 @@
 #pragma once
 
-#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -112,17 +111,17 @@ static void self_test()
         0x13111d7f, 0xe3944a17, 0xf307a78b, 0x4d2b30c5,
     };
     static const uint32_t aes128_decBB[] = {
-        0x03020100, 0x07060504, 0x0b0a0908, 0x0f0e0d0c,
-        0xf0df568c, 0xf9d35d82, 0xfcd35a80, 0xfdd75986,
-        0x9902dba0, 0x60d18622, 0x9c02dca2, 0x61d58524,
-        0x91e3c6c7, 0xf13240e5, 0x6d309c47, 0x0ce51963,
-        0x04f5a2a8, 0xf5c7e24d, 0x98f77e0a, 0x94126769,
-        0x2710c42e, 0xd2d72663, 0x4a205869, 0xde323f00,
-        0x8d09e372, 0x5fdec511, 0x15fe9d78, 0xcbcca278,
-        0x74fc828d, 0x2b22479c, 0x3edcdae4, 0xf510789c,
-        0x63a46213, 0x4886258f, 0x765aff6b, 0x834a87f7,
-        0xbe29aa13, 0xf6af8f9c, 0x80f570f7, 0x03bff700,
-        0x7f1d1113, 0x174a94e3, 0x8ba707f3, 0xc5302b4d,
+        0x13111d7f, 0xe3944a17, 0xf307a78b, 0x4d2b30c5,
+        0x13aa29be, 0x9c8faff6, 0xf770f580, 0x00f7bf03,
+        0x1362a463, 0x8f258648, 0x6bff5a76, 0xf7874a83,
+        0x8d82fc74, 0x9c47222b, 0xe4dadc3e, 0x9c7810f5,
+        0x72e3098d, 0x11c5de5f, 0x789dfe15, 0x78a2cccb,
+        0x2ec41027, 0x6326d7d2, 0x6958204a, 0x003f32de,
+        0xa8a2f504, 0x4de2c7f5, 0x0a7ef798, 0x69671294,
+        0xc7c6e391, 0xe54032f1, 0x479c306d, 0x6319e50c,
+        0xa0db0299, 0x2286d160, 0xa2dc029c, 0x2485d561,
+        0x8c56dff0, 0x825dd3f9, 0x805ad3fc, 0x8659d7fd,
+        0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f,
     };
     static const uint32_t aes128_decLF[] = {
         0x03020100, 0x07060504, 0x0b0a0908, 0x0f0e0d0c,
@@ -285,25 +284,44 @@ static void self_test()
     };
 
     uint8_t tmp[32];
-    (void)tmp;
 
-    assert(aes128_detect_enc<true>(aes128_encB, tmp) && memcmp(aes_key, tmp, 16) == 0);
-    assert(aes128_detect_enc<false>(aes128_encL, tmp) && memcmp(aes_key, tmp, 16) == 0);
-    assert(aes192_detect_enc<true>(aes192_encB, tmp) && memcmp(aes_key, tmp, 24) == 0);
-    assert(aes192_detect_enc<false>(aes192_encL, tmp) && memcmp(aes_key, tmp, 24) == 0);
-    assert(aes256_detect_enc<true>(aes256_encB, tmp) && memcmp(aes_key, tmp, 32) == 0);
-    assert(aes256_detect_enc<false>(aes256_encL, tmp) && memcmp(aes_key, tmp, 32) == 0);
+#define AES_CHECK(fun, reverse, arr, len)                              \
+    if (!fun<reverse>(arr, tmp) || memcmp(aes_key, tmp, len) != 0)     \
+    {                                                                  \
+        printf("Self-test %s<%s>(%s) failed\n", #fun, #reverse, #arr); \
+        abort();                                                       \
+    }                                                                  \
+    else                                                               \
+    {                                                                  \
+        memset(tmp, 0, sizeof(tmp));                                   \
+    }                                                                  \
 
-    assert(aes_detect_dec(aes128_decBF, tmp) == 16 && memcmp(aes_key, tmp, 16) == 0);
-    assert(aes_detect_dec(aes128_decBB, tmp) == 16 && memcmp(aes_key, tmp, 16) == 0);
-    assert(aes_detect_dec(aes128_decLF, tmp) == 16 && memcmp(aes_key, tmp, 16) == 0);
-    assert(aes_detect_dec(aes128_decLB, tmp) == 16 && memcmp(aes_key, tmp, 16) == 0);
-    assert(aes_detect_dec(aes192_decBF, tmp) == 24 && memcmp(aes_key, tmp, 24) == 0);
-    assert(aes_detect_dec(aes192_decBB, tmp) == 24 && memcmp(aes_key, tmp, 24) == 0);
-    assert(aes_detect_dec(aes192_decLF, tmp) == 24 && memcmp(aes_key, tmp, 24) == 0);
-    assert(aes_detect_dec(aes192_decLB, tmp) == 24 && memcmp(aes_key, tmp, 24) == 0);
-    assert(aes_detect_dec(aes256_decBF, tmp) == 32 && memcmp(aes_key, tmp, 32) == 0);
-    assert(aes_detect_dec(aes256_decBB, tmp) == 32 && memcmp(aes_key, tmp, 32) == 0);
-    assert(aes_detect_dec(aes256_decLF, tmp) == 32 && memcmp(aes_key, tmp, 32) == 0);
-    assert(aes_detect_dec(aes256_decLB, tmp) == 32 && memcmp(aes_key, tmp, 32) == 0);
+    AES_CHECK(aes128_detect_enc, true, aes128_encB, 16);
+    AES_CHECK(aes128_detect_enc, false, aes128_encL, 16);
+
+    AES_CHECK(aes192_detect_enc, true, aes192_encB, 24);
+    AES_CHECK(aes192_detect_enc, false, aes192_encL, 24);
+
+    AES_CHECK(aes256_detect_enc, true, aes256_encB, 32);
+    AES_CHECK(aes256_detect_enc, false, aes256_encL, 32);
+
+    AES_CHECK(aes128_detect_decF, true, aes128_decBF, 16);
+    AES_CHECK(aes128_detect_decF, false, aes128_decLF, 16);
+
+    AES_CHECK(aes128_detect_decB, true, aes128_decBB, 16);
+    AES_CHECK(aes128_detect_decB, false, aes128_decLB, 16);
+
+    AES_CHECK(aes192_detect_decF, true, aes192_decBF, 24);
+    AES_CHECK(aes192_detect_decF, false, aes192_decLF, 24);
+
+    AES_CHECK(aes192_detect_decB, true, aes192_decBB, 24);
+    AES_CHECK(aes192_detect_decB, false, aes192_decLB, 24);
+
+    AES_CHECK(aes256_detect_decF, true, aes256_decBF, 32);
+    AES_CHECK(aes256_detect_decF, false, aes256_decLF, 32);
+
+    AES_CHECK(aes256_detect_decB, true, aes256_decBB, 32);
+    AES_CHECK(aes256_detect_decB, false, aes256_decLB, 32);
+
+#undef AES_CHECK
 }
