@@ -1015,7 +1015,7 @@ int main(int argc, char* argv[])
 {
     if (argc != 2)
     {
-        printf("Usage: aes-finder -pid | process.exe\n");
+        printf("Usage: aes-finder -pid | process-name\n");
         return EXIT_FAILURE;
     }
 

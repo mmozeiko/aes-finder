@@ -9,7 +9,7 @@ Usage
 
 Open `aes-finder.sln` solution in Visual Studio 2013 to compile source. Alternatively use gcc/clang:
 
-    g++ -O3 -march=native -fomit-frame-pointer -s aes-finder.cpp -o aes-finder
+    g++ -O3 -march=native -fomit-frame-pointer aes-finder.cpp -o aes-finder
 
 To search for keys in process with id = 123, execute following:
 
@@ -117,6 +117,17 @@ Now you can see what kind of AES keys are used in your favorite application!
     [0x7fc39b313450] Found AES-128 encryption key: 0ad922797aba3078841bc298104bb39a
     Done!
 
+### iTunes on Mac OS X
+
+    $ sudo ./aes-finder iTunes
+    Searching PID 40912 ...
+    [0x7fe073e7dd3c] Found AES-128 encryption key: 743554fb48b78d29ad73fbd231373982
+    [0x7fe073e7de00] Found AES-128 encryption key: 743554fb48b78d29ad73fbd231373982
+    [0x7fe0758aaa88] Found AES-128 encryption key: dc4b5af0c373c4b3cf1158fe0a42022f
+    [0x7fe0758aab78] Found AES-128 decryption key: dc4b5af0c373c4b3cf1158fe0a42022f
+    [0x7fe0758aac6c] Found AES-128 encryption key: 000102030405060708090a0b0c0d0e0f
+    [0x7fe0758aad5c] Found AES-128 decryption key: 000102030405060708090a0b0c0d0e0f
+    Done!
 
 Notes
 -----
