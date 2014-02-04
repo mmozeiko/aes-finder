@@ -5,6 +5,7 @@
 #include <string.h>
 
 #define WIN32_LEAN_AND_MEAN
+#define _WIN32_WINNT 0x0502
 #include <windows.h>
 #include <tlhelp32.h>
 
@@ -84,7 +85,25 @@ static bool os_process_begin(uint32_t pid)
     os_process_info.RegionSize = 0;
 
     os_process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-    return !!os_process;
+    if (os_process == NULL)
+    {
+        return false;
+    }
+
+#if defined(_M_IX86) || defined(__i386__)
+    BOOL wow64;
+    if (IsWow64Process(GetCurrentProcess(), &wow64) && wow64)
+    {
+        if (IsWow64Process(os_process, &wow64) && !wow64)
+        {
+            // 32-bit (wow) process should not touch 64-bit (non-wow) process
+            CloseHandle(os_process);
+            return false;
+        }
+    }
+#endif
+
+    return true;
 }
 
 static uint64_t os_process_next(uint64_t* size)
