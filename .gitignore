@@ -1,7 +1,7 @@
 *.suo
 *.sdf
 *.opensdf
-aes-finder/*.user
-aes-finder/Debug
-aes-finder/Release
-aes-finder/x64
+msvc2013/*.user
+msvc2013/Debug
+msvc2013/Release
+msvc2013/x64

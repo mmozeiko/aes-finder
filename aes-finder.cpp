@@ -1,13 +1,36 @@
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <tlhelp32.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_AMD64))
+// _rotr is in <stdlib.h>
+#elif defined(__clang__) && (defined(__i386__) || defined(__x86_64__))
+static uint32_t _rotr(uint32_t x, int n)
+{
+    __asm__ __volatile__("rorl %2, %0" : "=r"(x) : "0"(x), "Nc"(n));
+    return x;
+}
+#elif defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+// _rotr is in <ia32intrin.h>
+#include <x86intrin.h>
+#else
+static uint32_t _rotr(uint32_t x, int n)
+{
+    return (x >> n) | (x << (32 - n));
+}
+#endif
+
+#if defined(WIN32)
+#include "os_windows.h"
+#elif defined(__linux__)
+#include "os_linux.h"
+#elif defined(__APPLE__)
+#include "os_osx.h"
+#else
+#error Unknown OS!
+#endif
 
 static const uint32_t rcon[] = {
     0x01000000, 0x02000000, 0x04000000, 0x08000000,
@@ -880,27 +903,24 @@ static int aes_detect_dec(const uint32_t* ctx, uint8_t* key)
 
 #include "aes-finder-test.h"
 
-static void find_keys(DWORD pid)
+static void find_keys(uint32_t pid)
 {
     printf("Searching PID %u ...\n", pid);
 
-    HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-    if (process == NULL)
+    if (!os_process_begin(pid))
     {
         printf("Failed to open process\n");
         return;
     }
 
-    MEMORY_BASIC_INFORMATION info;
-    uint8_t* mem = NULL;
-
     uint8_t buffer[64 * 1024];
     uint32_t avail = 0;
 
-    const uint8_t* region = NULL;
-    SIZE_T size = 0;
+    uint64_t region = 0;
+    uint64_t region_size = 0;
+    uint64_t size = 0;
 
-    const uint8_t* addr = 0;
+    uint64_t addr = 0;
 
     clock_t t0 = clock();
     uint64_t total = 0;
@@ -909,35 +929,28 @@ static void find_keys(DWORD pid)
     {
         if (size == 0)
         {
-            // need to get new region
-            if (VirtualQueryEx(process, mem, &info, sizeof(info)) == FALSE)
+            uint64_t next_size;
+            uint64_t next = os_process_next(&next_size);
+            if (next == 0)
             {
-                // out of regions, done!
                 break;
             }
-            if (mem != (uint8_t*)info.BaseAddress)
+
+            if (region + region_size != next)
             {
-                // there is a hole between regions, flush buffer
                 avail = 0;
             }
-            mem = (uint8_t*)info.BaseAddress + info.RegionSize;
 
-            if ((info.Protect & (PAGE_READONLY | PAGE_READWRITE)) == 0)
-            {
-                // not readable, request next region
-                continue;
-            }
-
-            addr = region = (const uint8_t*)info.BaseAddress;
-            size = info.RegionSize;
+            addr = region = next;
+            size = region_size = next_size;
         }
 
-        SIZE_T read = sizeof(buffer)-avail;
-        if (read > size) read = size;
+        uint32_t read = sizeof(buffer)-avail;
+        if (read > size) read = (uint32_t)size;
 
-        if (ReadProcessMemory(process, region, buffer, read, &read) == 0)
+        read = os_process_read(region, buffer, read);
+        if (read == 0)
         {
-            // can not read region, skip it
             avail = 0;
             size = 0;
             continue;
@@ -945,7 +958,7 @@ static void find_keys(DWORD pid)
         total += read;
         region += read;
         size -= read;
-        avail += (uint32_t)read;
+        avail += read;
 
         uint32_t offset = 0;
         if (avail >= 60)
@@ -955,31 +968,33 @@ static void find_keys(DWORD pid)
                 uint8_t key[32];
                 if (int len = aes_detect_enc((const uint32_t*)&buffer[offset], key))
                 {
-                    printf("[%p] Found AES-%d encryption key: ", addr, len * 8);
+                    printf("[%p] Found AES-%d encryption key: ", (void*)addr, len * 8);
                     for (int i = 0; i < len; i++)
                     {
                         printf("%02x", key[i]);
                     }
                     printf("\n");
 
-                    offset += 24 + len;
-                    addr += 24 + len;
+                    offset += 28 + len;
+                    addr += 28 + len;
                 }
                 else if (int len = aes_detect_dec((const uint32_t*)&buffer[offset], key))
                 {
-                    printf("[%p] Found AES-%d decryption key: ", addr, len * 8);
+                    printf("[%p] Found AES-%d decryption key: ", (void*)addr, len * 8);
                     for (int i = 0; i < len; i++)
                     {
                         printf("%02x", key[i]);
                     }
                     printf("\n");
 
-                    offset += 24 + len;
-                    addr += 24 + len;
+                    offset += 28 + len;
+                    addr += 28 + len;
                 }
-
-                offset += 4;
-                addr += 4;
+                else
+                {
+                    offset += 4;
+                    addr += 4;
+                }
             }
 
             avail -= offset;
@@ -993,26 +1008,9 @@ static void find_keys(DWORD pid)
     const double MB = 1024.0 * 1024.0;
     printf("Processed %.2f MB, speed = %.2f MB/s\n", total / MB, total / MB / time);
 
-    CloseHandle(process);
+    os_process_end();
 }
 
-static void AddLocalDebugPrivileges()
-{
-    HANDLE hToken;
-    if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken))
-    {
-        TOKEN_PRIVILEGES tp;
-        if (LookupPrivilegeValue(NULL, "SeDebugPrivilege", &tp.Privileges[0].Luid))
-        {
-            tp.PrivilegeCount = 1;
-            tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-
-            AdjustTokenPrivileges(hToken, FALSE, &tp, 0, NULL, 0);
-        }
-
-        CloseHandle(hToken);
-    }
-}
 int main(int argc, char* argv[])
 {
     if (argc != 2)
@@ -1022,35 +1020,23 @@ int main(int argc, char* argv[])
     }
 
     self_test();
-
-    AddLocalDebugPrivileges();
+    os_startup();
 
     if (argv[1][0] == '-')
     {
-        DWORD pid = atoi(argv[1] + 1);
+        uint32_t pid = atoi(argv[1] + 1);
         find_keys(pid);
     }
     else
     {
-        HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-        if (snapshot == INVALID_HANDLE_VALUE) abort();
-
-        PROCESSENTRY32 entry;
-        entry.dwSize = sizeof(entry);
-
-        if (Process32First(snapshot, &entry))
+        if (os_enum_start())
         {
-            do
+            while (uint32_t pid = os_enum_next(argv[1]))
             {
-                if (_stricmp(entry.szExeFile, argv[1]) == 0)
-                {
-                    find_keys(entry.th32ProcessID);
-                }
+                find_keys(pid);
             }
-            while (Process32Next(snapshot, &entry));
+            os_enum_end();
         }
-
-        CloseHandle(snapshot);
     }
 
     printf("Done!\n");
