@@ -961,9 +961,9 @@ static void find_keys(uint32_t pid)
         avail += read;
 
         uint32_t offset = 0;
-        if (avail >= 60)
+        if (avail >= 60*sizeof(uint32_t))
         {
-            while (offset <= avail - 60)
+            while (offset <= avail - 60*sizeof(uint32_t))
             {
                 uint8_t key[32];
                 if (int len = aes_detect_enc((const uint32_t*)&buffer[offset], key))
