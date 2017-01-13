@@ -948,7 +948,7 @@ static void find_keys(uint32_t pid)
         uint32_t read = sizeof(buffer)-avail;
         if (read > size) read = (uint32_t)size;
 
-        read = os_process_read(region, buffer, read);
+        read = os_process_read(region, buffer+avail, read);
         if (read == 0)
         {
             avail = 0;
