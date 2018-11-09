@@ -1,9 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30110.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.4
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aes-finder", "msvc2013/aes-finder.vcxproj", "{31F3DC12-56C9-4DF8-BB2B-53CD701E7C18}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aes-finder", "msvc2013\aes-finder.vcxproj", "{31F3DC12-56C9-4DF8-BB2B-53CD701E7C18}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5C987280-5304-4A21-A88B-00D516EA3B67} = {5C987280-5304-4A21-A88B-00D516EA3B67}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dumpmem", "msvc2013\dumpmem.vcxproj", "{5C987280-5304-4A21-A88B-00D516EA3B67}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +26,14 @@ Global
 		{31F3DC12-56C9-4DF8-BB2B-53CD701E7C18}.Release|Win32.Build.0 = Release|Win32
 		{31F3DC12-56C9-4DF8-BB2B-53CD701E7C18}.Release|x64.ActiveCfg = Release|x64
 		{31F3DC12-56C9-4DF8-BB2B-53CD701E7C18}.Release|x64.Build.0 = Release|x64
+		{5C987280-5304-4A21-A88B-00D516EA3B67}.Debug|Win32.ActiveCfg = Debug|x64
+		{5C987280-5304-4A21-A88B-00D516EA3B67}.Debug|Win32.Build.0 = Debug|x64
+		{5C987280-5304-4A21-A88B-00D516EA3B67}.Debug|x64.ActiveCfg = Debug|x64
+		{5C987280-5304-4A21-A88B-00D516EA3B67}.Debug|x64.Build.0 = Debug|x64
+		{5C987280-5304-4A21-A88B-00D516EA3B67}.Release|Win32.ActiveCfg = Release|Win32
+		{5C987280-5304-4A21-A88B-00D516EA3B67}.Release|Win32.Build.0 = Release|Win32
+		{5C987280-5304-4A21-A88B-00D516EA3B67}.Release|x64.ActiveCfg = Release|x64
+		{5C987280-5304-4A21-A88B-00D516EA3B67}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

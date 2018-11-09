@@ -97,6 +97,7 @@ static bool os_process_begin(uint32_t pid)
         if (IsWow64Process(os_process, &wow64) && !wow64)
         {
             // 32-bit (wow) process should not touch 64-bit (non-wow) process
+			// In other words, if the dumper is 32bit, cannot open 64 bit processes
             CloseHandle(os_process);
             return false;
         }
