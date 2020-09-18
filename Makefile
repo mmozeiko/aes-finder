@@ -24,11 +24,16 @@ endif
  
  
 SRCEXT := cpp
-SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+SOURCES := aes-finder.cpp
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
 $(TARGET): $(OBJECTS)
+	@mkdir -p $(BINDIR)
 	@echo " Linking..."; $(CC) $(LINK) $^ -o $(BINDIR)/$(TARGET)
+ 
+memdump: $(BUILDDIR)/memdump.o
+	@mkdir -p $(BINDIR)
+	@echo " Linking..."; $(CC) $(LINK) $^ -o $(BINDIR)/memdump
  
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
