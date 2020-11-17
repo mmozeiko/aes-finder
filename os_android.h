@@ -7,9 +7,19 @@
 
 #include <sys/types.h>
 #include <sys/uio.h>
+
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
+
+// Handle older Android APIs where process_vm_readv is not defined (prior to 23)
+#ifndef process_vm_readv
+#include <sys/syscall.h>
+#include <asm/unistd.h>
+ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt, const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags) {
+    return syscall(__NR_process_vm_readv, pid, local_iov, liovcnt, remote_iov, riovcnt, flags);
+}
+#endif
 
 static char os_self_name[16];
 

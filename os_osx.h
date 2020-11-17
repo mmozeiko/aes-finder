@@ -113,7 +113,6 @@ static uint64_t os_process_next(uint64_t* size)
         os_process_addr += os_process_size;
 
         uint32_t depth = 1;
-        mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT;
         vm_region_submap_info_64 info;
         mach_msg_type_number_t count = VM_REGION_SUBMAP_INFO_COUNT_64;
 
