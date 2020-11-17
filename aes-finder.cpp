@@ -37,6 +37,8 @@ static uint32_t _rotr(uint32_t x, int n)
 #error Unknown OS!
 #endif
 
+static int stopOnFirst = 0;
+
 struct aes_key_t {
     uint64_t len;
     uint64_t offset;
@@ -926,6 +928,11 @@ static aes_key_t* append_key(aes_key_t* cur_key, bool is_encrypt, void *addr, ui
 		printf("%02x", key[i]);
 	}
 	printf("\n");
+	
+	if (stopOnFirst) {
+	  fflush(stdout);
+	  exit(0);
+	}
 
 	struct aes_key_t* new_key = (struct aes_key_t*)malloc(sizeof(struct aes_key_t));
 	new_key->offset = (uint64_t)addr;
@@ -1135,7 +1142,7 @@ int main(int argc, char* argv[])
 {
     if (argc < 3)
     {
-        printf("Usage: aes-finder [-p pid | -n process-name | -f file] [/output/folder]\n");
+        printf("Usage: aes-finder { -1 } [-p pid | -n process-name | -f file] [/output/folder]\n");
         return EXIT_FAILURE;
     }
 
@@ -1149,6 +1156,11 @@ int main(int argc, char* argv[])
     // Windows does not have getopt(), so we have to parse this manually
 
     struct aes_key_t *aes_keys = NULL;
+
+    if (strcmp(argv[1], "-1") == 0) {
+      stopOnFirst = 1;
+      argv++;
+    }
 
     if (strcmp(argv[1], "-p") == 0) {
         /* PID */
@@ -1174,8 +1186,7 @@ int main(int argc, char* argv[])
         /* Raw file */
 
         printf("Searching file: %s...\n", argv[2]);
-        find_keys_file(&aes_keys, argv[2]);
-        
+        find_keys_file(&aes_keys, argv[2]);      
     } else {
         printf("Unknown command switch %s provided\n", argv[1]);
         return EXIT_FAILURE;
